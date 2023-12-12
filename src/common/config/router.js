@@ -12,23 +12,20 @@ let routes = [
         component: 'layout',
         children: [
             {
-                // path:'/index',
-                // name:'index',
-                // component: () => import('../../views/index/index')
                 meta: { title: "后台首页" },
                 component: 'index/index'
+            }, {
+                meta: { title: "商品列表" },
+                component: 'shop/goods/list'
+            }, {
+                meta: { title: "创建商品" },
+                component: 'shop/goods/create'
             },
             {
                 meta: { title: "相册管理" },
                 component: 'image/index'
             },
-            {
-                // path:'/shop/goods/list',
-                // name:'shop_goods_list',
-                // component: () => import('../../views/shop/goods/list')
-                meta: { title: "商品列表" },
-                component: 'shop/goods/list'
-            },
+
 
         ]
     },
