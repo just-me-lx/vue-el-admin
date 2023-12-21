@@ -36,26 +36,81 @@
 
 					<el-form ref="form" label-width="80px">
 						<el-form-item label="批量设置">
-							<el-button type="text">销售价</el-button>
-							<el-button type="text">市场价</el-button>
-							<el-button type="text">成本价</el-button>
-							<el-button type="text">库存</el-button>
-							<el-button type="text">体积</el-button>
-							<el-button type="text">重量</el-button>
+							<template v-if="!updateAllStatus">
+								<el-button type="text" v-for="(btn, btnIndex) in updateList" :key="btnIndex"
+									@click="openUpdateAllStatus(btn)">{{ btn.name }}</el-button>
+							</template>
+							<div class="d-flex align-items-center" v-else>
+								<el-input size="small" style="width:150px;" class="mr-2" type="number" :placeholder="UpdateAllPlaceholder"
+									v-model="updateAllValue"></el-input>
+								<el-button type="primary" size="mini" @click="UpdateAllSubmit">设置</el-button>
+								<el-button size="mini" @click="closeUpdateAllStatus">取消</el-button>
+							</div>
 						</el-form-item>
 						<el-form-item label="规格设置">
-							<sku-table></sku-table>
+							<sku-table ref="table"></sku-table>
 						</el-form-item>
 					</el-form>
 				</template>
 			</el-tab-pane>
-			<el-tab-pane label="商品属性">商品属性</el-tab-pane>
-			<el-tab-pane label="媒体设置">媒体设置</el-tab-pane>
+			<el-tab-pane label="商品属性">
+				<el-form ref="form" label-width="80px">
+					<el-form-item label="商品类型">
+						<el-select placeholder="请选择商品类型" :value="goods_type_id" @change="vModel('goods_type_id', $event)">
+							<el-option label="区域一" value="shanghai"></el-option>
+							<el-option label="区域二" value="beijing"></el-option>
+						</el-select>
+					</el-form-item>
+					<el-card class="box-card">
+						<div slot="header" class="clearfix">
+							<span>商品属性</span>
+						</div>
+						<el-form ref="form" label-width="80px">
+							<el-form-item label="输入框">
+								<el-input :value="goods_attrs.phone_model" placeholder="请输入手机型号"
+									@input="vModelGoodsAttrs({ key: 'phone_model', value: $event })"></el-input>
+							</el-form-item>
+						</el-form>
+					</el-card>
+
+
+				</el-form>
+			</el-tab-pane>
+			<el-tab-pane label="媒体设置">
+				<el-form label-width="80px">
+					<el-form-item label="商品大图">
+						<div class="d-flex flex-wrap">
+							<div style="width:150px;height:150px;cursor:pointer;position:relative"
+								class="border d-flex align-items-center justify-content-center mr-3 mb-3" v-for="(item, index) in banners"
+								:key="index" @click="chooseImage(index)">
+								<img v-if="item.url" :src="item.url" style="width:100%;height:100%" />
+								<i v-else class="el-icon-plus text-muted" style="font-size:30px"></i>
+								<i class="el-icon-delete p-2 text-white"
+									style="position:absolute;top:0;right:0;backgroud-color:rgba(0,0,0.4)"
+									@click.stop="deleteImage(index)"></i>
+							</div>
+
+							<div v-if="banners.length < 9" style="width:150px;height:150px;cursor:pointer"
+								class="border d-flex align-items-center justify-content-center mr-3 mb-3" @click="chooseImage(-1)">
+								<i class="el-icon-plus text-muted" style="font-size:30px"></i>
+							</div>
+						</div>
+					</el-form-item>
+				</el-form>
+			</el-tab-pane>
 			<el-tab-pane label="商品详情">
 				<!-- 富文本编辑器 -->
 				<tinymce ref="editor" v-model="msg" @onClick="onClick" />
 			</el-tab-pane>
-			<el-tab-pane label="折扣设置">折扣设置</el-tab-pane>
+			<el-tab-pane label="折扣设置">
+				<el-form ref="form" label-width="80px">
+					<el-form-item label="会员价">
+						<el-input :value="discount" @input="vModel('discount', $event)" style="width:200px">
+							<template slot="append">%</template>
+						</el-input>
+					</el-form-item>
+				</el-form>
+			</el-tab-pane>
 		</el-tabs>
 	</div>
 </template>
@@ -67,7 +122,7 @@ import skuCard from '@/components/shop/create/sku/sku-card.vue';
 import skuTable from "@/components/shop/create/sku/sku-table.vue";
 import tinymce from "@/components/common/tinymce.vue";
 export default {
-	name: "app",
+	inject: ['app'],
 	components: {
 		baseCreate,
 		singleAttrs,
@@ -79,12 +134,28 @@ export default {
 		return {
 			tabIndex: 0,
 			msg: 'Welcome to Use Tinymce Editor',
+			updateList: [
+				{ name: "销售价", key: "pprice" },
+				{ name: "市场价", key: "oprice" },
+				{ name: "成本价", key: "cprice" },
+				{ name: "库存", key: "stock" },
+				{ name: "体积", key: "volumn" },
+				{ name: "重量", key: "weight" },
+			],
+			// 批量修改
+			updateAllStatus: false,
+			UpdateAllPlaceholder: "",
+			updateAllValue: ""
 		}
 	},
 	computed: {
 		...mapState({
 			skus_type: state => state.goods_create.skus_type,
-			sku_card: state => state.goods_create.sku_card
+			sku_card: state => state.goods_create.sku_card,
+			banners: state => state.goods_create.banners,
+			goods_type_id: state => state.goods_create.goods_type_id,
+			goods_attrs: state => state.goods_create.goods_attrs,
+			discount: state => state.goods_create.discount,
 		}),
 		// 规格卡片总数
 		skuCardTotal () {
@@ -92,7 +163,7 @@ export default {
 		}
 	},
 	methods: {
-		...mapMutations(['vModelState', 'addSkuCard']),
+		...mapMutations(['vModelState', 'addSkuCard', 'vModelGoodsAttrs']),
 		// 修改表单的值
 		vModel (key, value) {
 			this.vModelState({ key, value });
@@ -112,6 +183,51 @@ export default {
 		// 清空内容
 		clear () {
 			this.$refs.editor.clear()
+		},
+		// 修改批量设置状态
+		openUpdateAllStatus (item) {
+			this.updateAllStatus = item.key;
+			this.UpdateAllPlaceholder = item.name;
+		},
+		// 取消批量设置状态
+		closeUpdateAllStatus () {
+			this.updateAllStatus = false;
+			this.updateAllValue = "";
+		},
+		// 提交批量设置
+		UpdateAllSubmit () {
+			this.$refs.table.list.forEach(item => {
+				item[this.updateAllStatus] = this.updateAllValue;
+			});
+			this.closeUpdateAllStatus();
+		},
+		// 选择图片
+		chooseImage (index) {
+			const MAX = 9;
+			let count = MAX - this.banners.length;
+			this.app.chooseImage((res) => {
+				let list = [];
+				if (index === -1) {
+					list = [...this.banners, ...res];
+				} else {
+					list = [...this.banners];
+					list[index] = res[0];
+				}
+				this.vModel("banners", list);
+			}, index === -1 ? count : 1);
+		},
+		// 删除大图的方法
+		deleteImage (index) {
+			this.$confirm('是否要删除该图片?', '提示', {
+				confirmButtonText: '确定',
+				cancelButtonText: '取消',
+				type: 'warning'
+			}).then(() => {
+				let list = [...this.banners];
+				list.splice(index, 1);
+				this.vModel("banners", list);
+			}).catch(() => {
+			});
 		}
 	}
 }

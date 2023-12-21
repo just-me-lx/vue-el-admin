@@ -38,8 +38,9 @@
 						</el-form>
 					</template>
 				</button-search>
-				<el-table :data="tableData[tabIndex].list" style="width: 100%" border class="mt-3">
-					<el-table-column type="selection" width="45" align="center" @selection-change="handleSelectionChange">
+				<el-table :data="tableData[tabIndex].list" style="width: 100%" border class="mt-3"
+					@selection-change="handleSelectionChange">
+					<el-table-column type="selection" width="45" align="center">
 					</el-table-column>
 
 					<el-table-column prop="title" label="商品" width="380px">

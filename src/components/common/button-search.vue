@@ -6,10 +6,9 @@
 
 
 			<!-- 右边 -->
-			<div class="ml-auto" v-show="!superSearch">
+			<div class="ml-auto" v-show="!superSearch" v-if="showSearch">
 				<slot name="right">
-					<el-input v-model="keyword" :placeholder="placeholder" size="mini" style="width:150px"
-						class="mr-2"></el-input>
+					<el-input v-model="keyword" :placeholder="placeholder" size="mini" style="width:150px" class="mr-2"></el-input>
 					<el-button type="info" size="mini" @click="$emit('search', keyword)">搜索</el-button>
 					<el-button size="mini" @click="superSearch = true">高级搜索</el-button>
 				</slot>
@@ -33,6 +32,10 @@ export default {
 		placeholder: {
 			type: String,
 			default: ""
+		},
+		showSearch: {
+			type: Boolean,
+			default: true
 		}
 	},
 	data () {

@@ -55,6 +55,9 @@ export default {
     }
   },
   mounted () {
+    this.$watch("item.list", (newValue, oldValue) => {
+      this.list = newValue;
+    });
     // 监听拖拽过程
     // this.$dragging.$on('dragged', ({ value }) => {
     //   console.log(value.item)
@@ -63,13 +66,10 @@ export default {
     // })
     // 监听拖拽结束
     this.$dragging.$on('dragend', (e) => {
-      if (e.group === "skuItem" + this.index) {
-        this.sortSkuValue({
-          index: this.index,
-          value: this.list
-        });
-      }
-
+      this.sortSkuValue({
+        index: this.index,
+        value: this.list
+      });
     })
   },
   methods: {
