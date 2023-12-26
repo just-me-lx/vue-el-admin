@@ -2,7 +2,7 @@
   <el-dialog title="商品规格选择" :visible.sync="createModel" width="80%" top="5vh">
     <el-container style="position:relative;height:70vh;margin:-30px -20px">
       <el-container>
-        <el-aside width="200px" style="position: absolute;top: 0;left: 0px;bottom: 0;" class="bg-white border-right">
+        <el-aside width="200px" style="position: absolute;top: 0;left: 0px;bottom: 50px;" class="bg-white border-right">
           <!-- 侧边 | 相册列表 -->
           <ul class="list-group list-group-flush">
             <li class="list-group-item list-group-item-action " v-for="(item, index) in skusList" :key="index"
@@ -10,6 +10,15 @@
               {{ item.name }}</li>
           </ul>
         </el-aside>
+        <el-footer class="border"
+          style="position:absolute;left:0;right:0;bottom:0;height:50px;width:200px;display:flex;align-items:center;justify-content:center">
+          <div style="flex:1;" class="px-2">
+            <el-pagination :current-page="page.current" :page-sizes="page.sizes" :page-size="page.size"
+              layout="prev, next" :total="page.total" @size-change="handleSizeChange"
+              @current-change="handleCurrentChange">
+            </el-pagination>
+          </div>
+        </el-footer>
         <el-container>
           <el-header style="position:absolute;top:0;left:200px;right:0;height:60px;line-height:60px"
             class="border-top border-bottom">
@@ -31,76 +40,95 @@
     </div>
   </el-dialog>
 </template>
+
 <script>
+import common from '@/common/mixins/common.js'
 export default {
+  mixins: [common],
   data () {
     return {
+      preUrl: 'skus',
+      loading: false,
       createModel: false,
       callback: false,
       // 选中的数据
       chooseList: [],
       skusIndex: 0,
       // 数据
-      skusList: [
-        {
-          name: "颜色",
-          type: 0,// 规格类型 0无 1颜色 2图片
-          // 规格属性列表
-          list: [
-            {
-              id: 1,
-              name: "红色",
-              image: "",
-              color: "",
-              ischeck: false
+      skusList: []
+      // skusList: [
+      //   {
+      //     name: "颜色",
+      //     type: 0,// 规格类型 0无 1颜色 2图片
+      //     // 规格属性列表
+      //     list: [
+      //       {
+      //         id: 1,
+      //         name: "红色",
+      //         image: "",
+      //         color: "",
+      //         ischeck: false
 
-            },
-            {
-              id: 2,
-              name: "黄色",
-              image: "",
-              color: "",
-              ischeck: false
-            }
-          ]
-        },
-        {
-          name: "尺寸",
-          type: 0,// 规格类型 0无 1颜色 2图片
-          // 规格属性列表
-          list: [
-            {
-              id: 3,
-              name: "XL",
-              image: "",
-              color: "",
-              ischeck: false
-            },
-            {
-              id: 4,
-              name: "XXL",
-              image: "",
-              color: "",
-              ischeck: false
-            }
-          ]
-        }
-      ],
+      //       },
+      //       {
+      //         id: 2,
+      //         name: "黄色",
+      //         image: "",
+      //         color: "",
+      //         ischeck: false
+      //       }
+      //     ]
+      //   },
+      //   {
+      //     name: "尺寸",
+      //     type: 0,// 规格类型 0无 1颜色 2图片
+      //     // 规格属性列表
+      //     list: [
+      //       {
+      //         id: 3,
+      //         name: "XL",
+      //         image: "",
+      //         color: "",
+      //         ischeck: false
+      //       },
+      //       {
+      //         id: 4,
+      //         name: "XXL",
+      //         image: "",
+      //         color: "",
+      //         ischeck: false
+      //       }
+      //     ]
+      //   }
+      // ],
     }
   },
   computed: {
     // 当前规格下的规格属性列表
     skuItems () {
-      return this.skusList[this.skusIndex].list;
+      let item = this.skusList[this.skusIndex]
+      return item ? item.list : [];
     },
     // 是否全选
     isChooseAll () {
       return this.skuItems.length === this.chooseList.length;
     }
   },
-  created () {
-  },
   methods: {
+    getListResult (e) {
+      this.skusList = e.list.map(item => {
+        let list = item.default.split(",")
+        item.list = list.map(name => {
+          return {
+            name: name,
+            image: "",
+            color: "",
+            ischeck: false
+          }
+        })
+        return item
+      })
+    },
     // 打开弹出层
     chooseSkus (callback) {
       this.callback = callback;
@@ -110,6 +138,7 @@ export default {
       if (typeof this.callback === "function") {
         let item = this.skusList[this.skusIndex];
         this.callback({
+          id: item.id,
           name: item.name,
           type: item.type,
           list: this.chooseList
@@ -177,6 +206,7 @@ export default {
   }
 }
 </script>
+
 <style>
 .sum-active {
   background-color: teal;

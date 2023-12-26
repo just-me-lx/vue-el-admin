@@ -4,12 +4,12 @@
     {{ item.name }}
 
     <span class="btn btn-light btn-sm border ml-auto" v-if="!showOption">
-      {{ item.order }}</i>
+      {{ item.images_count }}</i>
     </span>
 
     <el-dropdown class="ml-auto" v-else>
       <span class="btn btn-light btn-sm border">
-        {{ item.order }}<i class="el-icon-arrow-down el-icon--right"></i>
+        {{ item.images_count }}<i class="el-icon-arrow-down el-icon--right"></i>
       </span>
       <el-dropdown-menu slot="dropdown">
         <el-dropdown-item @click.stop.native="$emit('edit', { item, index })">修改</el-dropdown-item>

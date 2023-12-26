@@ -8,18 +8,19 @@
                             <h3 class="text-center mb-0 text-secondary">{{ $conf.logo }}</h3>
                         </div>
                         <div class="card-body">
-                            <el-form ref="ruleForm" :model="ruleForm" :rules="rules">
+                            <el-form ref="ruleForm" :model="form" :rules="rules">
                                 <el-form-item prop="username">
-                                    <el-input v-model="ruleForm.username" size="medium" placeholder="请输入用户名">
+                                    <el-input v-model="form.username" size="medium" placeholder="请输入用户名">
                                     </el-input>
                                 </el-form-item>
                                 <el-form-item prop="password">
-                                    <el-input v-model="ruleForm.password" size="medium" type="password" placeholder="请输入密码">
+                                    <el-input v-model="form.password" size="medium" type="password" placeholder="请输入密码">
                                     </el-input>
                                 </el-form-item>
                                 <el-form-item>
-                                    <el-button type="primary" size="medium" class="w-100" @click="submit">
-                                        立即登录
+                                    <el-button type="primary" size="medium" :loading="loading" class="w-100"
+                                        @click="submit">
+                                        {{ loading ? '登录中' : '立即登录' }}
                                     </el-button>
                                 </el-form-item>
                             </el-form>
@@ -31,10 +32,12 @@
     </div>
 </template>
 <script>
+import { mapGetters } from 'vuex'
 export default {
     data () {
         return {
-            ruleForm: {
+            loading: false,
+            form: {
                 username: '',
                 password: ''
 
@@ -49,12 +52,34 @@ export default {
             }
         }
     },
+    computed: {
+        ...mapGetters(['adminIndex'])
+    },
     methods: {
         submit () {
             this.$refs.ruleForm.validate((e) => {
                 if (!e) return
                 // 提交表单
-                this.$router.push({ name: 'index' })
+                this.loading = true;
+                this.axios.post('/admin/login', this.form).then(res => {
+                    // 存储到vuex
+                    let data = res.data.data
+                    // 存储到本地存储
+                    this.$store.commit('login', data)
+                    // 存储权限规则
+                    if (data.role && data.role.rules)
+                        window.sessionStorage.setItem('rules', JSON.stringify(data.role.rules))
+                    // 生成后台菜单
+                    this.$store.commit('createNavBar', data.tree)
+                    // 成功提示
+                    this.$message("登录成功");
+                    this.loading = false;
+                    // 跳转后台首页
+                    this.$router.push({ name: this.adminIndex })
+                }).catch(err => {
+                    this.loading = false;
+                })
+
             })
         }
     }

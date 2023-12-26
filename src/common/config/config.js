@@ -47,12 +47,75 @@ export default {
             icon: "el-icon-s-finance",
             name: "商品类型",
             pathname: "shop_type_list"
+          },
+          {
+            icon: "el-icon-s-finance",
+            name: "商品评论",
+            pathname: "shop_comment_list"
           }
         ]
       },
-      { name: "订单" },
-      { name: "会员" },
-      { name: "设置" },
+      {
+        name: "订单",
+        subActive: '0',
+        submenu: [
+          {
+            icon: "el-icon-s-order",
+            name: "订单列表",
+            pathname: "order_order_list"
+          },
+          {
+            icon: "el-icon-s-order",
+            name: "发票管理",
+            pathname: "order_invoice_list"
+          },
+          {
+            icon: "el-icon-s-order",
+            name: "售后服务",
+            pathname: "order_after-sale_list"
+          },
+
+        ]
+      },
+      {
+        name: "会员",
+        subActive: '0',
+        submenu: [
+          {
+            icon: "el-icon-s-order",
+            name: "会员列表",
+            pathname: "user_user-list_list"
+          },
+          {
+            icon: "el-icon-s-order",
+            name: "会员等级",
+            pathname: "user_user-level_list"
+          }
+        ]
+      },
+      {
+        name: "设置",
+        subActive: '0',
+        submenu: [
+          {
+            icon: "el-icon-s-order",
+            name: "基础设置",
+            pathname: "set_base"
+          }, {
+            icon: "el-icon-s-order",
+            name: "物流设置",
+            pathname: "set_express"
+          }, {
+            icon: "el-icon-s-order",
+            name: "管理员管理",
+            pathname: "set_manager"
+          }, {
+            icon: "el-icon-s-order",
+            name: "交易设置",
+            pathname: "set_payment"
+          }
+        ]
+      },
     ]
   }
 }

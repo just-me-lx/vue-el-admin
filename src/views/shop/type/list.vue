@@ -2,7 +2,7 @@
   <div class="bg-white px-3" style="margin:-20px;margin-top:-1rem;margin-bottom:0 !important">
     <button-search :showSearch="false" class="pt-3">
       <template #left>
-        <el-button size="mini" type="success" @click="openModel(false)">添加规格</el-button>
+        <el-button size="mini" type="success" @click="openModel(false)">添加类型</el-button>
         <el-button size="mini" type="danger" @click="deleteAll">批量删除</el-button>
       </template>
     </button-search>
@@ -13,6 +13,9 @@
       <el-table-column prop="name" label="类型名称">
       </el-table-column>
       <el-table-column prop="value" label="属性标签" align="center" width="380px">
+        <template slot-scope="scope">
+          {{ scope.row.value_list | formatValue }}
+        </template>
       </el-table-column>
       <el-table-column prop="order" label="排序" align="center">
       </el-table-column>
@@ -27,7 +30,7 @@
         <template slot-scope="scope">
           <el-button-group>
             <el-button type="primary" size="mini" plain @click="openModel(scope)">修改</el-button>
-            <el-button type="danger" size="mini" plain @click="deleteItem(scope)">删除</el-button>
+            <el-button type="danger" size="mini" plain @click="deleteItem(scope.row)">删除</el-button>
           </el-button-group>
         </template>
       </el-table-column>
@@ -37,18 +40,19 @@
     <el-footer class="border-top d-flex align-items-center px-0 position-fixed bg-white"
       style="bottom:0;left:200px;right:0;z-index:100;">
       <div style="flex:1;" class="px-2">
-        <el-pagination :current-page="currentPage" :page-sizes="[100, 200, 300, 400]" :page-size="100"
-          layout="total, sizes, prev, pager, next, jumper" :total="400">
+        <el-pagination :current-page="page.current" :page-sizes="page.sizes" :page-size="page.size"
+          layout="total, sizes, prev, pager, next, jumper" :total="page.total" @size-change="handleSizeChange"
+          @current-change="handleCurrentChange">
         </el-pagination>
       </div>
     </el-footer>
 
 
     <!-- 新增|修改模态框 -->
-    <el-dialog title="添加规格" :visible.sync="createModel" top="5vh">
+    <el-dialog title="添加类型" :visible.sync="createModel" top="5vh" width="80%">
       <el-form ref="form" :model="form" :rules="rules">
-        <el-form-item label="规格名称" label-width="80px" prop="name">
-          <el-input v-model="form.name" size="mini" placeholder="规格名称" style="width:50%"></el-input>
+        <el-form-item label="类型名称" label-width="80px" prop="name">
+          <el-input v-model="form.name" size="mini" placeholder="类型名称" style="width:50%"></el-input>
         </el-form-item>
         <el-form-item label="排序" label-width="80px">
           <el-input-number v-model="form.order" size="mini" :min="0"></el-input-number>
@@ -59,16 +63,66 @@
             <el-radio :label="0" border>禁用</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="类型" label-width="80px">
-          <el-radio-group v-model="form.type" size="mini">
-            <el-radio :label="0" border>文字</el-radio>
-            <el-radio :label="1" border>颜色</el-radio>
-            <el-radio :label="2" border>图片</el-radio>
-          </el-radio-group>
+        <el-form-item label="关联规格" label-width="80px">
+          <div class="d-flex">
+            <span class="sku-list-item px-3 py-2 border rounder mr-3" style="line-height: initial;"
+              v-for="(item, index) in form.sku_list" :key="index">
+              <font>{{ item.name }}</font>
+              <i class="el-icon-delete" @click="deleteFormSkuList(index)"></i>
+            </span>
+            <el-button size="mini" @click="chooseSkus">
+              <i class="el-icon-plus"></i>
+            </el-button>
+
+          </div>
         </el-form-item>
-        <el-form-item label="规格值" label-width="80px" prop="value">
-          <el-input type="textarea" :rows="3" v-model="form.value" size="mini" placeholder="一行为一个规格项,多个规格项用换行输入"
-            style="width:50%"></el-input>
+        <el-form-item label="属性列表" label-width="80px" prop="value">
+          <el-table :data="value_list" style="width: 100%">
+            <el-table-column prop="order" label="排序" width="100" align="center">
+              <template slot-scope="scope">
+                <el-input v-model="scope.row.order" size="mini" placeholder="排序"></el-input>
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="属性名称" width="130" align="center">
+              <template slot-scope="scope">
+                <el-input v-model="scope.row.name" size="mini" placeholder="属性名称"></el-input>
+              </template>
+            </el-table-column>
+            <el-table-column prop="type" label="所属类型" width="130" align="center">
+              <template slot-scope="scope">
+                <el-select v-model="scope.row.type" placeholder="请选择所属类型" size="mini">
+                  <el-option label="输入框" value="input"></el-option>
+                  <el-option label="单选框" value="radio"></el-option>
+                  <el-option label="多选框" value="checkbox"></el-option>
+                </el-select>
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="是否显示" width="80" align="center">
+              <template slot-scope="scope">
+                <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+              </template>
+
+            </el-table-column>
+            <el-table-column prop="default" label="属性值" align="center">
+              <template slot-scope="scope" v-if="scope.row.type !== 'input'">
+                <el-input type="textarea" v-model="scope.row.default" size="mini" placeholder="一行为一个属性值,多个属性值用换行输入"
+                  v-if="scope.row.isedit"></el-input>
+                <span v-else>{{ scope.row.value }}</span>
+              </template>
+
+            </el-table-column>
+            <el-table-column label="操作" width="200" align="center">
+              <template slot-scope="scope">
+                <el-button v-if="scope.row.type !== 'input'" type="link" size="mini" @click="editRow(scope)">{{
+                  scope.row.isedit ? "完成" : "编辑属性值"
+                }}</el-button>
+                <el-button type="link" size="mini" @click="delRow(scope.$index)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-form-item>
+        <el-form-item label-width="80px">
+          <el-button type="text" size="mini" icon="el-icon-plus" @click="addValue">添加一个属性</el-button>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -81,37 +135,18 @@
 </template>
 <script>
 import buttonSearch from "@/components/common/button-search.vue"
+import common from "@/common/mixins/common.js"
 export default {
-  name: "app",
+  inject: ['layout', 'app'],
+  mixins: [common],
   components: {
     buttonSearch
   },
   data () {
     return {
-      tabIndex: 0,
+      preUrl: "goods_type",
 
-      tableData: [{
-        id: 1,
-        name: "颜色",
-        value: "棕色,蓝色",
-        order: 50,
-        status: 1,
-        type: 1
-      }, {
-        id: 2,
-        name: "颜色",
-        value: "棕色,蓝色",
-        order: 50,
-        status: 1,
-        type: 1
-      }, {
-        id: 3,
-        name: "颜色",
-        value: "棕色,蓝色",
-        order: 50,
-        status: 1,
-        type: 1
-      }],
+      tableData: [],
       currentPage: 1,
       multipleSelection: [],
       createModel: false,
@@ -120,23 +155,35 @@ export default {
         name: "",
         order: 50,
         status: 1,
-        type: 0,
-        value: ""
+        sku_list: [],
       },
+      value_list: [],
       rules: {
         name: [
-          { required: true, message: "规则名称不能为空", trigger: blur }
-        ],
-        value: [
-          { required: true, message: "规则值不能为空", trigger: blur }
+          { required: true, message: "类型名称不能为空", trigger: blur }
         ]
       }
     }
   },
-  created () {
-
+  filters: {
+    formatValue (value) {
+      let arr = value.map(v => v.name);
+      return arr.join(",")
+    }
+  },
+  computed: {
+    // 关联规格id组成的一维数组
+    skus_id () {
+      return this.form.sku_list.map(item => item.id)
+    }
   },
   methods: {
+    getListResult (e) {
+      this.tableData = e.list.map(item => {
+        item.value_list = item.goods_type_values
+        return item
+      })
+    },
     // 打开模态框
     openModel (e = false) {
       // 增加
@@ -145,100 +192,134 @@ export default {
           name: "",
           order: 50,
           status: 1,
-          type: 0,
-          value: ""
+          sku_list: [],
         }
+        this.value_list = [];
         this.editIndex = -1;
       } else {
         this.form = {
-          name: e.row.name,
-          order: e.row.order,
-          status: e.row.status,
-          type: e.row.type,
-          value: e.row.value.replace(",", "\n")
+          ...e.row
         }
+        this.value_list = [...e.row.value_list];
         this.editIndex = e.$index;
       }
       this.createModel = true;
     },
-    // 添加规格
+    // 添加类型
     submit () {
       this.$refs.form.validate(res => {
+        // 验证属性列表
+        var result = true;
+        var message = [];
+        this.value_list.forEach((item, index) => {
+          let no = index + 1;
+          if (item.order == "") {
+            result = result && false;
+            message.push("第" + no + "行:排序不能为空");
+          }
+          if (item.name === "") {
+            result = result && false;
+            message.push("第" + no + "行:属性名称不能为空");
+          }
+          if (item.type !== "input" && item.default == "") {
+            result = result && false;
+            message.push("第" + no + "行:属性值不能为空");
+          }
+        });
+        if (!result) {
+          var temp = '';
+          message.forEach(v => {
+            temp += `<li>${v}</li>`;
+          })
+          return this.$notify({
+            title: '属性列表提示',
+            dangerouslyUseHTMLString: true,
+            message: `<ul>${temp}</ul>`,
+            type: 'warning',
+            duration: 3000
+          });
+        }
+
         if (res) {
           var msg = "添加";
-          this.form.value = this.form.value.replace("/\n/g", ",");
           if (this.editIndex === -1) {
-            this.tableData.unshift(this.form);
+            let value_list = this.value_list.map(item => {
+              if (item.default) {
+                item.default = item.default.replace(/\n/g, ',')
+              }
+              return item
+            })
+            let data = {
+              ...this.form,
+              skud_id: this.skus_id,
+              value_list: [...value_list]
+            }
+            this.addOrEdit(data)
           } else {
             let item = this.tableData[this.editIndex];
             item.name = this.form.name;
-            item.value = this.form.value;
+            item.sku_list = this.form.sku_list;
             item.status = this.form.status;
             item.order = this.form.order;
             item.type = this.form.type;
+            item.value_list = this.value_list;
             msg = "修改";
           }
           this.createModel = false;
-          this.$message({
-            message: msg + "成功",
-            type: "success"
-          })
         }
       })
     },
-    // 修改状态
-    changeStatus (item) {
-      // 请求服务端修改状态
-      item.status = !item.status;
-      this.$message({
-        message: item.status ? "启用" : "禁用",
-        type: "success"
+    // 添加属性
+    addValue () {
+      this.value_list.push({
+        order: 50,
+        name: "",
+        type: "input",
+        default: "",
+        isedit: false
       })
     },
-    handleSelectionChange (val) {
-      this.multipleSelection = val;
+    // 编辑属性
+    editRow (scope) {
+      scope.row.isedit = !scope.row.isedit;
     },
-    // 删除单个
-    deleteItem (scope) {
-      this.$confirm('是否要删除该规格?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.tableData.splice(scope.$index, 1);
-        this.$message({
-          type: 'success',
-          message: '删除成功!'
-        });
-      }).catch(() => {
-      });
+    // 删除属性值
+    delRow (index) {
+      this.value_list.splice(index, 1);
     },
-    // 批量删除
-    deleteAll () {
-      console.log(111)
-      this.$confirm('是否要删除选中规格?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.multipleSelection.forEach(item => {
-          let index = this.tableData.findIndex(v => v.id === item.id);
-          if (index !== -1) {
-            this.tableData.splice(index, 1)
-          }
-        });
-        this.multipleSelection = [];
-        this.$message({
-          type: 'success',
-          message: '删除成功!'
-        });
-      }).catch(() => {
-      });
-
+    chooseSkus () {
+      this.app.chooseSkus((e) => {
+        let index = this.form.sku_list.findIndex(item => {
+          return item.id === e.id
+        })
+        if (index === -1) {
+          this.form.sku_list.push(e)
+        }
+      })
+    },
+    deleteFormSkuList (index) {
+      this.form.sku_list.splice(index, 1)
     }
 
 
   }
 }
 </script>
-<style></style>
+<style>
+.sku-list-item>i {
+  display: none;
+  cursor: pointer;
+}
+
+.sku-list-item:hover {
+  background-color: #f4f4f4;
+}
+
+.sku-list-item:hover>font {
+  display: none
+}
+
+.sku-list-item:hover>i {
+  display: inline-block;
+}
+</style>

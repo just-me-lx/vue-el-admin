@@ -37,6 +37,50 @@ let routes = [
                 meta: { title: "商品类型管理" },
                 component: 'shop/type/list'
             },
+            {
+                meta: { title: "商品评论管理" },
+                component: 'shop/comment/list'
+            },
+            {
+                meta: { title: "发票管理" },
+                component: 'order/invoice/list'
+            },
+            {
+                meta: { title: "售后服务管理" },
+                component: 'order/after-sale/list'
+            },
+            {
+                meta: { title: "订单列表管理" },
+                component: 'order/order/list'
+            },
+            {
+                meta: { title: "会员列表管理" },
+                component: 'user/user-list/list'
+            },
+            {
+                meta: { title: "会员等级" },
+                component: 'user/user-level/list'
+            },
+            {
+                meta: { title: "基础设置" },
+                component: 'set/base/index'
+            },
+            {
+                meta: { title: "物流设置" },
+                component: 'set/express/index'
+            },
+            {
+                meta: { title: "管理员管理" },
+                component: 'set/manager/index'
+            },
+            {
+                meta: { title: "交易设置" },
+                component: 'set/payment/index'
+            },
+            {
+                meta: { title: "404错误" },
+                component: 'error/404'
+            },
 
 
         ]
